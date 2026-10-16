@@ -6,22 +6,23 @@ using ZXing.Common;
 namespace ZebraBleLabelPrinter.Services;
 
 /// <summary>
-/// 用 ZXing 渲染 CODE128 条形码到 WPF BitmapSource，供界面预览。
-/// 与 ZPL ^BC 打印的内容一致（都是 CODE128），仅作视觉预览。
+/// 用 ZXing 渲染 CODE128 条形码到 WPF BitmapSource，供界面预览与 ^GFA 位图打印。
+/// 位图宽度 = 条码实体 + 两侧 10 模块静区（Margin 单位为模块数），
+/// 打印内容与屏幕预览完全一致。
 /// </summary>
 public static class BarcodePreviewService
 {
-    public static BitmapSource RenderCode128(string content, int widthPx = 440, int heightPx = 250)
+    public static BitmapSource RenderCode128(string content, int imageWidthPx, int heightPx)
     {
         var writer = new BarcodeWriterPixelData
         {
             Format = BarcodeFormat.CODE_128,
             Options = new EncodingOptions
             {
-                Width = widthPx,
+                Width = imageWidthPx,
                 Height = heightPx,
-                Margin = 0,
-                PureBarcode = true,   // 不画人眼可读文本
+                Margin = Code128Layout.QuietModules, // 每侧 10 模块静区，画进位图内
+                PureBarcode = true,                  // 不画人眼可读文本
             }
         };
 

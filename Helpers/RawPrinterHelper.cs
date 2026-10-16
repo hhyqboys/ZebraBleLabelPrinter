@@ -17,6 +17,87 @@ internal static class RawPrinterHelper
         [MarshalAs(UnmanagedType.LPStr)] public string pDataType = "RAW";
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    private struct PRINTER_DEFAULTS
+    {
+        public IntPtr pDataType;
+        public IntPtr pDevMode;
+        public int DesiredAccess;
+    }
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    private struct JOB_INFO_1
+    {
+        public int JobId;
+        public IntPtr pPrinterName;
+        public IntPtr pMachineName;
+        public IntPtr pUserName;
+        public IntPtr pDocument;
+        public IntPtr pDatatype;
+        public IntPtr pStatus;
+        public int Status;
+        public int Priority;
+        public int Position;
+        public int TotalPages;
+        public int PagesPrinted;
+    }
+
+    private const int PRINTER_ALL_ACCESS = 0x000F0000;
+    private const int JOB_CONTROL_DELETE = 5;
+
+    [DllImport("winspool.Drv", EntryPoint = "OpenPrinterW", SetLastError = true, CharSet = CharSet.Unicode, ExactSpelling = true)]
+    private static extern bool OpenPrinterW(string szPrinter, out IntPtr hPrinter, ref PRINTER_DEFAULTS pd);
+
+    [DllImport("winspool.Drv", EntryPoint = "EnumJobsW", SetLastError = true, CharSet = CharSet.Unicode, ExactSpelling = true)]
+    private static extern bool EnumJobsW(IntPtr hPrinter, int FirstJob, int NoJobs, int Level, IntPtr pJob, int cbBuf, out int pcbNeeded, out int pcReturned);
+
+    [DllImport("winspool.Drv", EntryPoint = "SetJobW", SetLastError = true, CharSet = CharSet.Unicode, ExactSpelling = true)]
+    private static extern bool SetJobW(IntPtr hPrinter, int JobId, int Level, IntPtr pJob, int Command);
+
+    /// <summary>
+    /// 清空指定打印机的排队任务（含“错误-正在打印-正在重新启动”的卡死任务）。
+    /// 发送新任务前调用，避免旧任务阻塞/冲突。打不开队列时静默跳过，不影响打印。
+    /// </summary>
+    public static void PurgePrinterQueue(string printerName)
+    {
+        IntPtr h = IntPtr.Zero;
+        try
+        {
+            var pd = new PRINTER_DEFAULTS { DesiredAccess = PRINTER_ALL_ACCESS };
+            if (!OpenPrinterW(printerName.Normalize(), out h, ref pd) || h == IntPtr.Zero) return;
+
+            for (int pass = 0; pass < 3; pass++)
+            {
+                int needed = 0, returned = 0;
+                if (!EnumJobsW(h, 0, int.MaxValue, 1, IntPtr.Zero, 0, out needed, out returned)) return;
+                if (needed <= 0) return;
+
+                IntPtr buf = Marshal.AllocHGlobal(needed);
+                try
+                {
+                    if (!EnumJobsW(h, 0, int.MaxValue, 1, buf, needed, out _, out returned)) return;
+                    if (returned <= 0) return;
+                    IntPtr p = buf;
+                    for (int i = 0; i < returned; i++)
+                    {
+                        var job = Marshal.PtrToStructure<JOB_INFO_1>(p);
+                        SetJobW(h, job.JobId, 0, IntPtr.Zero, JOB_CONTROL_DELETE);
+                        p = IntPtr.Add(p, Marshal.SizeOf<JOB_INFO_1>());
+                    }
+                }
+                finally
+                {
+                    Marshal.FreeHGlobal(buf);
+                }
+            }
+        }
+        catch { /* 清理失败不阻塞打印流程 */ }
+        finally
+        {
+            if (h != IntPtr.Zero) ClosePrinter(h);
+        }
+    }
+
     [DllImport("winspool.Drv", EntryPoint = "OpenPrinterA", SetLastError = true, CharSet = CharSet.Ansi, ExactSpelling = true)]
     private static extern bool OpenPrinter([MarshalAs(UnmanagedType.LPStr)] string szPrinter, out IntPtr hPrinter, IntPtr pd);
 

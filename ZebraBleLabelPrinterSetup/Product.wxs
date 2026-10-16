@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+
+  <!--
+    安装包定义
+    - Version 来自 .wixproj 中 DefineConstants 定义的 $(var.Version)
+    - Scope="perMachine" 安装到 Program Files，需要管理员权限
+  -->
+  <Package Name="ZebraBleLabelPrinter"
+           Manufacturer="ZebraBleLabelPrinter"
+           Version="$(var.Version)"
+           UpgradeCode="5416BED8-FA19-408E-A9B0-933B72461FA3"
+           Scope="perMachine">
+
+    <!-- 升级策略：安装新版前自动卸载旧版，降级错误信息走本地化 -->
+    <MajorUpgrade DowngradeErrorMessage="!(loc.DowngradeError)" />
+
+    <!-- 内嵌 CAB 压缩包，生成单文件 MSI -->
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- 应用图标：用于快捷方式和添加/删除程序列表 -->
+    <Icon Id="ElectricControl.ico" SourceFile="Resources\ElectricControl.ico" />
+    <Property Id="ARPPRODUCTICON" Value="ElectricControl.ico" />
+
+    <!-- 许可协议：路径来自本地化文件（.wxl 中的 License 字符串） -->
+    <WixVariable Id="WixUILicenseRtf" Value="!(loc.License)" />
+
+    <!-- 安装功能：主程序 + 快捷方式 -->
+    <Feature Id="Main" Title="ZebraBleLabelPrinter" Level="1">
+      <ComponentGroupRef Id="ZebraBleLabelPrinter" />
+      <ComponentRef Id="ApplicationShortcut" />
+      <ComponentRef Id="DesktopShortcut" />
+    </Feature>
+
+    <!-- 标准安装界面（欢迎 → 许可协议 → 安装进度 → 完成） -->
+    <ui:WixUI Id="WixUI_Minimal" />
+
+  </Package>
+
+  <!-- 安装目录：Program Files\ElectricControl -->
+  <Fragment>
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="ZebraBleLabelPrinter" />
+    </StandardDirectory>
+  </Fragment>
+
+  <!-- 开始菜单目录 -->
+  <Fragment>
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ApplicationProgramsFolder" Name="ZebraBleLabelPrinter" />
+    </StandardDirectory>
+  </Fragment>
+
+  <!-- 桌面目录 -->
+  <Fragment>
+    <StandardDirectory Id="DesktopFolder" />
+  </Fragment>
+
+  <!-- 开始菜单快捷方式（含卸载入口） -->
+  <Fragment>
+    <ComponentGroup Id="StartMenuShortcuts" Directory="ApplicationProgramsFolder">
+      <Component Id="ApplicationShortcut" Guid="*">
+        <Shortcut Id="ApplicationStartMenuShortcut"
+                  Name="ElectricControl"
+                  Description="ZebraBleLabelPrinter - BleLabel Printer"
+                  Target="[INSTALLFOLDER]ZebraBleLabelPrinter.exe"
+                  WorkingDirectory="INSTALLFOLDER"
+                  Icon="ElectricControl.ico"
+                  IconIndex="0" />
+        <Shortcut Id="UninstallShortcut"
+                  Name="Uninstall ElectricControl"
+                  Description="Uninstall ElectricControl"
+                  Target="[System64Folder]msiexec.exe"
+                  Arguments="/x [ProductCode]" />
+        <RemoveFolder Id="RemoveApplicationProgramsFolder" On="uninstall" />
+        <RegistryValue Root="HKCU"
+                       Key="Software\ElectricControl"
+                       Name="installed"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+  <!-- 桌面快捷方式 -->
+  <Fragment>
+    <ComponentGroup Id="DesktopShortcuts" Directory="DesktopFolder">
+      <Component Id="DesktopShortcut" Guid="*">
+        <Shortcut Id="DesktopShortcut"
+                  Name="ElectricControl"
+                  Description="ZebraBleLabelPrinter - BleLabel Printer"
+                  Target="[INSTALLFOLDER]ZebraBleLabelPrinter.exe"
+                  WorkingDirectory="INSTALLFOLDER"
+                  Icon="ElectricControl.ico"
+                  IconIndex="0" />
+        <RegistryValue Root="HKCU"
+                       Key="Software\ElectricControl"
+                       Name="desktopshortcut"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+</Wix>

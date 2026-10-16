@@ -11,12 +11,7 @@ namespace ZebraBleLabelPrinter.ViewModels;
 
 public sealed class MainViewModel : ViewModelBase
 {
-    // 固定打印参数（600DPI）
-    private const int ModW = 4;            // ^BY 模块宽
-    private const int LabelW = 780;        // 33mm × 23.62
-    private const int LabelH = 780;
-    private const int BarcodeH = 450;
-    private const int BarcodeW = 167 * ModW; // 668
+    // 标签尺寸/条码排版统一由 Code128Layout 计算（600DPI，33×33mm），预览与实际打印一致
 
     private readonly BluetoothLeScanner _scanner = new();
     private readonly ZebraPrinterService _printer = new();
@@ -64,7 +59,11 @@ public sealed class MainViewModel : ViewModelBase
     private void LoadPrinters()
     {
         Printers.Clear();
-        foreach (var p in _printer.ListPrinters()) Printers.Add(p);
+        foreach (var p in _printer.ListPrinters())
+        {
+            // COM 口标注“直连串口”：直写打印机、绕过 Windows 打印队列，打印最稳
+            Printers.Add(ZebraPrinterService.ComPortRegex.IsMatch(p) ? $"{p}（直连串口）" : p);
+        }
         var def = _printer.GuessDefaultZebraPrinter(Printers);
         if (def != null) SelectedPrinter = def;
     }
@@ -135,10 +134,19 @@ public sealed class MainViewModel : ViewModelBase
 
     private void RefreshPreview()
     {
-        string bare = SelectedDevice?.Mac.Replace(":", "") ?? string.Empty;
-        PreviewImage = string.IsNullOrEmpty(bare)
-            ? null
-            : BarcodePreviewService.RenderCode128(bare, BarcodeW, BarcodeH);
+        string bare = SelectedDevice?.Mac ?? string.Empty;
+        if (string.IsNullOrEmpty(bare))
+        {
+            PreviewImage = null;
+        }
+        else
+        {
+            var layout = Code128Layout.Compute(bare);
+            PreviewImage = BarcodePreviewService.RenderCode128(
+                Code128Layout.Normalize(bare),
+                layout.ImageWidthDots,
+                Code128Layout.BarcodeHeightDots);
+        }
         OnPropertyChanged(nameof(PreviewImage));
     }
 

@@ -9,8 +9,8 @@ namespace ZebraBleLabelPrinter.Models;
 public sealed class PrintSettings : INotifyPropertyChanged
 {
     private int _moduleWidth = 4;
-    private double _labelWidthMm = 33;
-    private double _labelHeightMm = 33;
+    private double _labelWidthMm = 60;
+    private double _labelHeightMm = 40;
     private int _barcodeHeightDots = 450;
     private int? _barcodeX = null;
     private int? _barcodeY = null;

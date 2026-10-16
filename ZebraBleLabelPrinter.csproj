@@ -22,6 +22,9 @@
     <!-- 发布时不生成 PDB / 单文件自包含 -->
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
+
+    <!-- 排除子目录工具项目，避免其 obj 生成文件被递归包含导致编译冲突 -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);ConsoleTool\**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>

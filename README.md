@@ -10,13 +10,36 @@ WPF (.NET 8) + MVVM 工程，配合 **Zebra 110XiIII Plus 600DPI**，通过 USB�
 - 右上角下拉选择打印机，自动挑选名字含 "Zebra" 的；可点"刷新打印机列表"
 
 ## 打印链路
-- 用 Windows 打印后台处理程序（Win32 `OpenPrinter` / `WritePrinter`）**直接写 ZPL 原始字节**，
+- 两种打印方式，优先用 **COM 直连串口**（绕过 Windows 打印队列，最稳）：
+  1. 下拉里选 `COMx（直连串口）` → 程序直接往串口写 ZPL 原始字节；
+  2. 下拉里选打印机名 → 走 Windows 打印后台（Win32 `OpenPrinter`/`WritePrinter` 写 RAW），
+     发送前自动清空该打印机的排队任务（处理"错误-正在打印-正在重新启动"的卡死状态）。
   前提：Zebra 110XiIII Plus 通过 USB 接好，已安装 ZDesigner 驱动（即"USB 串口驱动"），
-  系统打印机列表里能看到这台打印机。
-- ZPL 标签尺寸按 **100 mm × 60 mm**（600 DPI ≈ 23.62 dots/mm）：
-  `^PW2360` × `^LL1417`；CODE128 模块宽度 2 dots、高度 350 dots。
-- 如果实际标签尺寸不同，改 `Services/ZebraPrinterService.cs::BuildMacBarcodeZpl` 里的
-  `^PWxxxx` / `^LLxxxx` / 坐标即可。
+  设备管理器端口里能看到对应 COM 口。
+- ZPL 标签尺寸按 **33 mm × 33 mm**（600 DPI ≈ 23.62 dots/mm）：
+  `^PW780` × `^LL780`；CODE128 条码高度 450 dots（≈19mm）。
+- 条码用 **ZPL ^BC 原生命令**打印（几百字节，任何连接都快，不使用位图/^GFA）；
+  每条 ZPL 带 `^LS0` 中和打印机内存储的水平偏移、`^LH0,0` 中和存储的标签原点。
+- 排版参数（模块宽、居中坐标）统一由 `Services/Code128Layout.cs` 计算：
+  **模块宽固定 3 dots**（用户指定）；**所有 MAC 统一按 CODE128 Subset B（167 模块 → 501 dots）
+  计算，x=139 居中**——与打印机 ^BC 实际行为一致（实测确认纯数字与带字母打印宽度相同，
+  均为 CODE B），保证任意 MAC 打印位置完全一致。
+- ZPL 中 `^FD>:{MAC}^FS` 带 **">:" 显式 Start Code B**（官方建议，杜绝固件子集歧义），
+  且 **不发送 ^CI27**（110XiIII 老固件字符集映射曾导致含字母数据编码异常，纯数字不受影响）。
+- 若打印仍左右偏：改 `Services/Code128Layout.cs` 里的 `HorizontalOffsetDots`
+  （正数条码右移，负数左移，1mm≈23.6 dots）；标签尺寸不同则改 `LabelW` / `LabelH`。
+
+## 控制台调试工具（ConsoleTool）
+构建：`dotnet build -c Release ConsoleTool\ZebraPrinterConsole.csproj`
+```
+ConsoleTool\bin\Release\net8.0-windows10.0.19041.0\ZebraPrinterConsole.exe
+ZebraPrinterConsole <MAC>                    # 输出打印参数与完整 ZPL
+ZebraPrinterConsole -print <MAC> -com COM3 [-offset N]          # 直连串口打印测试
+ZebraPrinterConsole -print <MAC> -printer "名称" [-offset N]    # 打印队列打印测试
+ZebraPrinterConsole -decode <图片路径>        # 用 ZXing 解码照片中的条码（验证打印质量/内容）
+```
+- `-offset N`：水平偏移(dots)，正数右移、负数左移；左侧溢出被截 → 用正数（如 60）右移补偿，
+  打一张看一次，直到左右居中，再把该值填回 `Code128Layout.HorizontalOffsetDots`。
 
 ## 关键文件
 ```

@@ -1,0 +1,105 @@
+<Project Sdk="WixToolset.Sdk/5.0.2">
+
+  <!-- ============================================================ -->
+  <!-- 安装包版本号：修改此值即可，全项目所有配置/平台统一生效     -->
+	
+	
+  <!-- 格式：主版本.次版本.修订号.构建号                           -->
+  <!-- ============================================================ -->
+  <PropertyGroup>
+    <InstallerVersion>1.0.21.0</InstallerVersion>
+  </PropertyGroup>
+
+  <!-- 默认平台：未指定或 AnyCPU 时自动使用 x64 -->
+  <PropertyGroup>
+    <Platform Condition=" '$(Platform)' == '' Or '$(Platform)' == 'AnyCPU' ">x64</Platform>
+  </PropertyGroup>
+
+  <!-- 多语言输出：每种语言生成独立 MSI -->
+  <PropertyGroup>
+    <Cultures>en-US;zh-CN</Cultures>
+  </PropertyGroup>
+
+  <!-- 统一定义 Version 编译常量，供 Product.wxs 中通过 $(var.Version) 引用 -->
+  <PropertyGroup>
+    <DefineConstants>$(DefineConstants);Version=$(InstallerVersion)</DefineConstants>
+  </PropertyGroup>
+
+  <!--
+    主项目目标框架（硬编码，与参考项目 BinEncryptor 做法一致）
+    升级 .NET 版本时需同步修改此处及下方 HarvestDirectory 路径中的框架名。
+    跨架构支持由 $(Platform) 动态处理，不同电脑/架构均可编译。
+  -->
+  <PropertyGroup>
+    <_MainTargetFramework>net8.0-windows10.0.19041.0</_MainTargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WixToolset.Heat" Version="5.0.2" />
+    <PackageReference Include="WixToolset.Netfx.wixext" Version="5.0.2" />
+    <PackageReference Include="WixToolset.UI.wixext" Version="5.0.2" />
+    <PackageReference Include="WixToolset.Util.wixext" Version="5.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 应用图标 -->
+    <None Include="Resources\ElectricControl.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 许可协议（多语言） -->
+    <None Include="License\License.en-us.rtf" />
+    <None Include="License\License.zh-cn.rtf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      项目引用：在 Visual Studio 中建立项目依赖关系（构建顺序）
+      - ReferenceOutputAssembly=false : 不引用主项目程序集（WiX 只需文件，不需程序集引用）
+      - SkipGetTargetFrameworkProperties=true : 跳过目标框架检查（WiX 项目无 TargetFramework）
+      - DoNotHarvest=true : 不自动收获项目输出（改用下方 HarvestDirectory 手动收集）
+    -->
+    <ProjectReference Include="..\ZebraBleLabelPrinter.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <SkipGetTargetFrameworkProperties>true</SkipGetTargetFrameworkProperties>
+      <DoNotHarvest>true</DoNotHarvest>
+    </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      自动收集主项目输出目录下的所有文件
+      路径：bin\$(Platform)\$(Configuration)\$(_MainTargetFramework)\
+      - $(Platform)：当前构建平台（x64/x86/ARM64），支持跨架构编译
+      - $(_MainTargetFramework)：主项目目标框架，定义于上方 PropertyGroup
+      收集到的文件归入 ZebraBleLabelPrinterFiles 组件组，安装到 INSTALLFOLDER
+    -->
+    <HarvestDirectory Include="..\bin\$(Configuration)\$(_MainTargetFramework)\">
+      <ComponentGroupName>ZebraBleLabelPrinter</ComponentGroupName>
+      <DirectoryRefId>INSTALLFOLDER</DirectoryRefId>
+      <SuppressRootDirectory>true</SuppressRootDirectory>
+      <!-- 通过 XSLT 过滤收集结果，排除 ZebraBleLabelPrinter.pdb（所有 *.pdb）组件 -->
+      <Transforms>$(MSBuildThisFileDirectory)ExcludePdb.xslt</Transforms>
+    </HarvestDirectory>
+  </ItemGroup>
+
+  <!--
+    构建前自动构建主项目
+    使用 Exec 调用独立 dotnet build 进程，而非 MSBuild 任务：
+    - MSBuild 任务在同一构建会话中会命中目标结果缓存（"以前的生成已成功"），
+      即使清理了 bin/obj 也会跳过 Build 目标，导致输出目录为空
+    - Exec 启动独立进程，完全避开当前 MSBuild 会话的缓存
+    - 使用当前 $(Platform)，支持 x64/x86/ARM64 跨架构编译
+    - YieldDuringToolExecution：执行时让出 MSBuild 节点，避免长时间占用
+    构建后验证 ZebraBleLabelPrinter.exe 存在，避免 Heat 因目录为空被静默跳过
+  -->
+  <Target Name="EnsureTestingSoftwareBuilt" BeforeTargets="Harvest">
+    <Exec Command="dotnet build ..\ZebraBleLabelPrinter.csproj -c $(Configuration) --nologo -v:minimal"
+          WorkingDirectory="$(MSBuildThisFileDirectory)"
+          YieldDuringToolExecution="true" />
+
+    <Error Condition="!Exists('..\bin\$(Configuration)\$(_MainTargetFramework)\ZebraBleLabelPrinter.exe')"
+           Text="未找到主项目输出文件 ZebraBleLabelPrinter.exe。&#xA;查找路径：..\bin\$(Configuration)\$(_MainTargetFramework)\ZebraBleLabelPrinter.exe&#xA;主项目已尝试自动构建（配置=$(Configuration)，目标框架=$(_MainTargetFramework)）但输出文件缺失。&#xA;请检查上方 dotnet build 的编译错误，常见原因：&#xA;  1) Lib\x64\vbac.dll 和 Lib\x86\vbac.dll 文件不存在（主项目将其作为嵌入资源引用）&#xA;  2) 主项目代码有编译错误" />
+  </Target>
+
+</Project>
