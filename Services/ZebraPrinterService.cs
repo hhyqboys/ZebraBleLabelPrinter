@@ -8,7 +8,7 @@ namespace ZebraBleLabelPrinter.Services;
 
 public sealed class ZebraPrinterService
 {
-    // 标签尺寸/条码排版统一由 Code128Layout 计算（600DPI，33×33mm）
+    // 标签尺寸/条码排版统一由 Code128Layout 计算（600DPI，双排 30×20mm，整排 81mm）
     public List<string> ListPrinters()
     {
         var list = new List<string>();
@@ -30,36 +30,40 @@ public sealed class ZebraPrinterService
     public string BuildMacBarcodeZpl(string mac, int? offsetOverride = null)
     {
         string bare = Code128Layout.Normalize(mac);
-        string testBare = Regex.Replace(bare, ".{2}", "$0 ").TrimEnd(); ;
         var layout = Code128Layout.Compute(bare);
 
-        // 用 ZPL ^BC 原生条码（几百字节，任何连接方式都快），模块宽固定 3，居中由 Code128Layout 计算。
+        // 双排标签：一排两列，同一 MAC 打两份。整排 ^PW=RowW(81mm)，^LL=ColH(20mm)。
+        // 用 ZPL ^BC 原生条码（几百字节，任何连接方式都快），模块宽固定 3，列内居中由 Code128Layout 计算。
         // ^LS0 中和打印机内存储的水平偏移（label shift），^LH0,0 中和存储的标签原点。
         // offsetOverride：控制台工具试偏移用；默认取 Code128Layout.HorizontalOffsetDots（左溢→正数右移）。
         int off = offsetOverride ?? Code128Layout.HorizontalOffsetDots;
-        int x = Math.Max(0, layout.X + off);
+        int textY = Code128Layout.TextY(layout);
 
         var sb = new StringBuilder();
         sb.AppendLine("^XA");
         sb.AppendLine("^LH0,0");
         sb.AppendLine("^LS0");
         sb.AppendLine("^LT0");
-        sb.AppendLine($"^FO0,0^LL{Code128Layout.LabelH}");
-        sb.AppendLine($"^PW{Code128Layout.LabelW}");
+        sb.AppendLine($"^FO0,0^LL{Code128Layout.ColH}");
+        sb.AppendLine($"^PW{Code128Layout.RowW}");
         sb.AppendLine($"^BY{layout.ModuleWidth},3.0");
-        sb.AppendLine($"^FO{x},{layout.Y}^BCN,{Code128Layout.BarcodeHeightDots},N,N,N");
-        // ">:" = CODE128 Subset B 起始码（官方建议显式指定，杜绝固件子集歧义）。
-        // 不发送 ^CI27：110XiIII 老固件字符集映射曾导致含字母数据编码异常（纯数字不受影响）。
-        sb.AppendFormat("^FD>:{0}^FS\r\n", bare);
-        // 可读文本：条码下方印 MAC（人眼可读，扫码结果可直接与标签文字比对验证）。
-        // 文本块取全宽居中，与条码中心（390）对齐，两种子集宽度下都居中。
-        int textY = layout.Y + Code128Layout.BarcodeHeightDots + 10;
-        sb.AppendLine($"^FO0,{textY}^A0N,72,72^FB{Code128Layout.LabelW},1,0,C^FD{testBare}^FS");
+
+        // 两列并排，同一 MAC；列块起点 = colIndex*(ColW+ColGap)+off，条码在列内居中（+layout.X）。
+        for (int col = 0; col < Code128Layout.Columns; col++)
+        {
+            int blockX = Code128Layout.ColumnBlockX(col, off);
+            int barcodeX = blockX + layout.X;
+            // ">:" = CODE128 Subset B 起始码（官方建议显式指定，杜绝固件子集歧义）。
+            // 不发送 ^CI27：110XiIII 老固件字符集映射曾导致含字母数据编码异常（纯数字不受影响）。
+            sb.AppendLine($"^FO{barcodeX},{layout.Y}^BCN,{Code128Layout.BarcodeHeightDots},N,N,N");
+            sb.AppendFormat("^FD>:{0}^FS\r\n", bare);
+            // 可读文本：条码下方，列内全宽（ColW）居中，与该列条码同心。
+            sb.AppendLine($"^FO{blockX},{textY}^A0N,{Code128Layout.TextFontDots},{Code128Layout.TextFontDots}^FB{Code128Layout.ColW},1,0,C^FD{bare}^FS");
+        }
         sb.AppendLine("^PQ1,0,1,Y");
         sb.AppendLine("^XZ");
         return sb.ToString();
     }
-
 
     /// <summary>是否 COM 串口（支持 “COM3（直连串口）” 这类带后缀的显示名）。</summary>
     internal static readonly Regex ComPortRegex = new(@"^COM\d+", RegexOptions.IgnoreCase);
@@ -100,8 +104,8 @@ public sealed class ZebraPrinterService
             {
                 throw new InvalidOperationException(
                     $"通过打印机队列 \"{printerName}\" 发送失败：{ex.Message}。" +
-                    "建议：1) 下拉里改选对应的 COM 口（直连串口，绕过打印队列）；" +
-                    "2) 断电重启打印机后再试。", ex);
+                    "建议：1) 下拉里改选对应的 COM 口（直连串口，绕过打印队列）；"
+                    + "2) 断电重启打印机后再试。", ex);
             }
         }
     }
