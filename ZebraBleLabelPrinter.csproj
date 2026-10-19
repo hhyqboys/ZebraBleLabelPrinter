@@ -28,6 +28,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="ZebraBleLabelPrinterSetup\**" />
+    <EmbeddedResource Remove="ZebraBleLabelPrinterSetup\**" />
+    <None Remove="ZebraBleLabelPrinterSetup\**" />
+    <Page Remove="ZebraBleLabelPrinterSetup\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="ZXing.Net" Version="0.16.9" />
     <PackageReference Include="System.IO.Ports" Version="8.0.0" />
   </ItemGroup>

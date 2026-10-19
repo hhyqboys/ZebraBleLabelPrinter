@@ -14,10 +14,10 @@ public static class Code128Layout
     public const double Dpm = 600.0 / 25.4;
 
     // —— 双排标签纸物理尺寸（600DPI 换算 dots）——
-    public const int RowW = 1913;   // 整排宽 dots（81mm，^PW）
-    public const int ColW = 709;    // 单列宽 dots（30mm）
-    public const int ColH = 472;    // 单列高 dots（20mm，^LL）
-    public const int ColGap = 47;  // 两列之间的缝 dots（2mm）
+    public const int RowW = (int)(76*23.62);   // 整排宽 dots（76mm，^PW）
+    public const int ColW = (int)(35*23.62);    // 单列宽 dots（35mm）
+    public const int ColH = (int)(20*23.62);    // 单列高 dots（20mm，^LL）
+    public const int ColGap = (int)(2*23.62);  // 两列之间的缝 dots（2mm）
     public const int Columns = 2;   // 一排两列
 
     // —— 单列内部排版 ——
@@ -33,14 +33,14 @@ public static class Code128Layout
     public const int QuietModules = 10;
 
     /// <summary>模块宽固定 3 dots（600DPI 下 0.127mm/5mil），用户指定。</summary>
-    public const int ModuleWidth = 3;
+    public const int ModuleWidth = 4;
 
     /// <summary>
     /// 水平偏移补偿（dots）：打印机介质/传感器/存储偏移导致条码整体左偏（左侧溢出被截）时调大（条码右移），
     /// 右偏时调小。默认 0 = 无补偿。1mm ≈ 23.6 dots。
     /// 可用控制台工具 ZebraPrinterConsole 的 -offset 参数快速试值。
     /// </summary>
-    public const int HorizontalOffsetDots = 0;
+    public const int HorizontalOffsetDots = 50;
 
     /// <summary>
     /// 排版结果：模块宽（dots）、条码实体宽（dots）、含静区宽度（dots，仅供屏幕预览）、
