@@ -8,7 +8,7 @@ namespace ZebraBleLabelPrinter.Services;
 
 public sealed class ZebraPrinterService
 {
-    // 标签尺寸/条码排版统一由 Code128Layout 计算（600DPI，双排 30×20mm，整排 81mm）
+    // 标签尺寸/条码排版统一由 Code128Layout 计算（600DPI，双排纸，只打第二列）
     public List<string> ListPrinters()
     {
         var list = new List<string>();
@@ -32,8 +32,8 @@ public sealed class ZebraPrinterService
         string bare = Code128Layout.Normalize(mac);
         var layout = Code128Layout.Compute(bare);
 
-        // 双排标签：一排两列，同一 MAC 打两份。整排 ^PW=RowW(81mm)，^LL=ColH(20mm)。
-        // 用 ZPL ^BC 原生条码（几百字节，任何连接方式都快），模块宽固定 3，列内居中由 Code128Layout 计算。
+        // 双排标签纸：只在第二列（右列）打印，第一列空白。整排 ^PW=RowW，^LL=ColH。
+        // 用 ZPL ^BC 原生条码（几百字节，任何连接方式都快），模块宽由 Code128Layout 指定，列内居中。
         // ^LS0 中和打印机内存储的水平偏移（label shift），^LH0,0 中和存储的标签原点。
         // offsetOverride：控制台工具试偏移用；默认取 Code128Layout.HorizontalOffsetDots（左溢→正数右移）。
         int off = offsetOverride ?? Code128Layout.HorizontalOffsetDots;
@@ -48,10 +48,11 @@ public sealed class ZebraPrinterService
         sb.AppendLine($"^PW{Code128Layout.RowW}");
         sb.AppendLine($"^BY{layout.ModuleWidth},3.0");
 
-        // 两列并排，同一 MAC；列块起点 = colIndex*(ColW+ColGap)+off，条码在列内居中（+layout.X）。
-        for (int col = 0; col < Code128Layout.Columns; col++)
+        // 只打印第二列（右列，printCol=1），第一列位置完全空白、不发任何条码/文本指令。
+        // 列块起点 = colIndex*(ColW+ColGap)+off，条码在列内居中（+layout.X）。
+        const int printCol = 1; // 0=第一列(左)，1=第二列(右)
         {
-            int blockX = Code128Layout.ColumnBlockX(col, off);
+            int blockX = Code128Layout.ColumnBlockX(printCol, off);
             int barcodeX = blockX + layout.X;
             // ">:" = CODE128 Subset B 起始码（官方建议显式指定，杜绝固件子集歧义）。
             // 不发送 ^CI27：110XiIII 老固件字符集映射曾导致含字母数据编码异常（纯数字不受影响）。

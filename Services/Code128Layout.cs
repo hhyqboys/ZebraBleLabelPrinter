@@ -3,9 +3,8 @@ using System;
 namespace ZebraBleLabelPrinter.Services;
 
 /// <summary>
-/// CODE128 条码在 600DPI、双排标签（单列 30×20mm，整排 81mm，列缝 2mm）上的统一排版计算。
-/// ZPL ^BC 原生条码方案（不使用位图打印），模块宽固定 3 dots；
-/// 一排两列，同一 MAC 打两份，每列内条码+可读文本垂直居中。
+/// CODE128 条码在 600DPI、双排标签（单列 35×20mm，整排 76mm，列缝 2mm）上的统一排版计算。
+/// ZPL ^BC 原生条码方案（不使用位图打印），模块宽固定；只在第二列打印，第一列空白。
 /// 水平偏移由 HorizontalOffsetDots 补偿（左溢→调大右移）。
 /// </summary>
 public static class Code128Layout
@@ -32,12 +31,12 @@ public static class Code128Layout
     /// <summary>CODE128 标准静区 = 窄条宽（模块宽）的 10 倍。^BC 不自动加静区，由居中式留白保证。</summary>
     public const int QuietModules = 10;
 
-    /// <summary>模块宽固定 3 dots（600DPI 下 0.127mm/5mil），用户指定。</summary>
+    /// <summary>模块宽（600DPI），用户实打调整。</summary>
     public const int ModuleWidth = 4;
 
     /// <summary>
     /// 水平偏移补偿（dots）：打印机介质/传感器/存储偏移导致条码整体左偏（左侧溢出被截）时调大（条码右移），
-    /// 右偏时调小。默认 0 = 无补偿。1mm ≈ 23.6 dots。
+    /// 右偏时调小。1mm ≈ 23.6 dots。
     /// 可用控制台工具 ZebraPrinterConsole 的 -offset 参数快速试值。
     /// </summary>
     public const int HorizontalOffsetDots = 50;
@@ -78,7 +77,7 @@ public static class Code128Layout
         => colIndex * (ColW + ColGap) + off;
 
     /// <summary>
-    /// 计算单列内排版坐标。模块宽固定 3 dots；X 按条码实体宽在单列内居中；
+    /// 计算单列内排版坐标。X 按条码实体宽在单列内居中；
     /// Y = 条码+文本整体在单列高度内垂直居中后的块顶位置。
     /// </summary>
     public static Layout Compute(string content, int labelW = ColW, int labelH = ColH, int barcodeHeight = BarcodeHeightDots)
