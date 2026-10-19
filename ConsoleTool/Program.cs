@@ -44,35 +44,19 @@ for (int i = 0; i < cmdArgs.Length; i++)
             if (i + 1 < cmdArgs.Length) mac = cmdArgs[++i];
             RenderAndShow(mac!);
             return;
-        case "-verify":
-            if (i + 5 < cmdArgs.Length)
-            {
-                VerifyBarcode(cmdArgs[++i], int.Parse(cmdArgs[++i]), int.Parse(cmdArgs[++i]), int.Parse(cmdArgs[++i]), int.Parse(cmdArgs[++i]), cmdArgs[++i]);
-                return;
-            }
-            Console.WriteLine("错误：-verify <图片> <x0> <x1> <y0> <y1> <MAC>（逐模块比对照片图案与标准渲染）");
-            return;
-        case "-decode3":
-            if (i + 4 < cmdArgs.Length)
-            {
-                DecodeRect(cmdArgs[++i], int.Parse(cmdArgs[++i]), int.Parse(cmdArgs[++i]), int.Parse(cmdArgs[++i]), int.Parse(cmdArgs[++i]));
-                return;
-            }
-            Console.WriteLine("错误：-decode3 <图片> <y0> <y1> <x0> <x1>（按已知条码矩形精确解码）");
-            return;
         case "-offset":
-            if (i + 1 < args.Length && int.TryParse(args[++i], out var o)) offset = o;
+            if (i + 1 < cmdArgs.Length && int.TryParse(cmdArgs[++i], out var o)) offset = o;
             else { Console.WriteLine("错误：-offset 需要一个整数（dots）"); return; }
             break;
         case "-com":
-            if (i + 1 < args.Length) com = args[++i];
+            if (i + 1 < cmdArgs.Length) com = cmdArgs[++i];
             break;
         case "-printer":
-            if (i + 1 < args.Length) printer = args[++i];
+            if (i + 1 < cmdArgs.Length) printer = cmdArgs[++i];
             break;
         default:
-            if (mac == null && !args[i].StartsWith("-")) mac = args[i];
-            else { Console.WriteLine($"未知参数：{args[i]}"); Usage(); return; }
+            if (mac == null && !cmdArgs[i].StartsWith("-")) mac = cmdArgs[i];
+            else { Console.WriteLine($"未知参数：{cmdArgs[i]}"); Usage(); return; }
             break;
     }
 }
@@ -100,7 +84,7 @@ var layout = Code128Layout.Compute(bare);
 int off = offset ?? Code128Layout.HorizontalOffsetDots;
 const double dpm = 600.0 / 25.4; // 600DPI 每 mm 点数 ≈ 23.62
 
-Console.WriteLine("=== 打印参数（600DPI，双排：单列 30×20mm，整排 81mm，列缝 2mm）===");
+Console.WriteLine("=== 打印参数（600DPI，双排纸：只打印第二列/右列，第一列空白）===");
 Console.WriteLine($"MAC（规范化）    : {bare}");
 Console.WriteLine("CODE128 子集     : B（^BC 默认子集，已在 ^FD 前显式加 \">:\" 起始码强制）");
 Console.WriteLine($"模块数（条码宽度）: {Code128Layout.CountModules(bare)}");
@@ -109,12 +93,14 @@ Console.WriteLine($"条码宽           : {layout.BarcodeWidthDots} dots（{layo
 Console.WriteLine($"条码高           : {Code128Layout.BarcodeHeightDots} dots（{Code128Layout.BarcodeHeightDots / dpm:F2} mm）");
 Console.WriteLine($"整排宽 ^PW       : {Code128Layout.RowW} dots（{Code128Layout.RowW / dpm:F1} mm）；单列高 ^LL={Code128Layout.ColH} dots（{Code128Layout.ColH / dpm:F1} mm）");
 Console.WriteLine($"水平偏移补偿     : {off} dots（{(off >= 0 ? "右移" : "左移")} {Math.Abs(off) / dpm:F2} mm）");
-for (int col = 0; col < Code128Layout.Columns; col++)
+// 只打印第二列（右列），第一列空白
+const int printCol = 1;
 {
-    int blockX = Code128Layout.ColumnBlockX(col, off);
+    int blockX = Code128Layout.ColumnBlockX(printCol, off);
     int barcodeX = blockX + layout.X;
-    Console.WriteLine($"第 {col + 1} 列        : 列块 x={blockX}，条码 ^FO x={barcodeX}（列内居中 {layout.X}），y={layout.Y}");
+    Console.WriteLine($"第 {printCol + 1} 列(打印) : 列块 x={blockX}，条码 ^FO x={barcodeX}（列内居中 {layout.X}），y={layout.Y}");
 }
+Console.WriteLine("第一列(左)       : 空白不打印");
 Console.WriteLine($"可读文本         : 条码下方 y={Code128Layout.TextY(layout)}，字号 {Code128Layout.TextFontDots}，列内全宽 {Code128Layout.ColW} 居中");
 
 string zpl = svc.BuildMacBarcodeZpl(bare, offset);
@@ -184,7 +170,7 @@ static void DecodeImage(string path)
     var scaled = new Bitmap(src, src.Width * 2, src.Height * 2);
     attempts.Add(("放大2x", scaled));
     for (int thr = 60; thr <= 200; thr += 40)
-        attempts.Add($"放大2x+二值化@阈值{thr}", ToBinary(scaled, thr));
+        attempts.Add(($"放大2x+二值化@阈值{thr}", ToBinary(scaled, thr)));
 
     bool any = false;
     foreach (var (name, bmp) in attempts)

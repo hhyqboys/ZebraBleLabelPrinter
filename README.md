@@ -16,20 +16,20 @@ WPF (.NET 8) + MVVM 工程，配合 **Zebra 110XiIII Plus 600DPI**，通过 USB�
      发送前自动清空该打印机的排队任务（处理"错误-正在打印-正在重新启动"的卡死状态）。
   前提：Zebra 110XiIII Plus 通过 USB 接好，已安装 ZDesigner 驱动（即"USB 串口驱动"），
   设备管理器端口里能看到对应 COM 口。
-- ZPL 标签纸为 **双排：单列 30mm × 20mm，整排宽 81mm，列缝 2mm**（600 DPI ≈ 23.62 dots/mm）：
-  `^PW1913`（整排 81mm）× `^LL472`（单列 20mm）；一排两列，**同一 MAC 打两份**（左右列各一张）。
+- 标签纸为双排格式，**只在第二列（右列）打印，第一列（左列）留空、不发任何条码/文本指令**；
+  整排宽 `^PW=RowW`、单列高 `^LL=ColH`，具体 mm/dots 见 `Services/Code128Layout.cs` 常量（600 DPI ≈ 23.62 dots/mm）。
 - 条码用 **ZPL ^BC 原生命令**打印（几百字节，任何连接都快，不使用位图/^GFA）；
   每条 ZPL 带 `^LS0` 中和打印机内存储的水平偏移、`^LH0,0` 中和存储的标签原点。
 - 排版参数（模块宽、列块起点、列内居中坐标、条码/文本位置）统一由 `Services/Code128Layout.cs` 计算：
-  **模块宽固定 3 dots**；**所有 MAC 统一按 CODE128 Subset B（167 模块 → 501 dots）列内居中**，
-  第 1 列块 x=0（条码列内 x=104），第 2 列块 x=756（条码 x=860）；
-  条码高 300 dots（≈12.7mm），条码+文本整体在 20mm 列高内垂直居中（块顶 y=63）。
+  所有 MAC 统一按 CODE128 Subset B（167 模块）列内居中；只输出第二列块
+  （块起点 = `ColW+ColGap+HorizontalOffsetDots`，条码再列内居中）；
+  条码高 300 dots（≈12.7mm），条码+文本整体在列高内垂直居中（块顶 y=63）。
 - ZPL 中 `^FD>:{MAC}^FS` 带 **">:" 显式 Start Code B**（官方建议，杜绝固件子集歧义），
   且 **不发送 ^CI27**（110XiIII 老固件字符集映射曾导致含字母数据编码异常，纯数字不受影响）。
-- 每列条码下方 **打印 MAC 可读文本**（`^A0N,36,36`，列内全宽 709 居中，y=373）：
+- 条码下方 **打印 MAC 可读文本**（`^A0N,36,36`，第二列内全宽居中，y=373）：
   扫码枪扫出的内容可直接与标签上的文字比对，用于验证 Zebra 编码是否正确。
 - 若打印仍左右偏（整排整体左溢/右偏）：改 `Services/Code128Layout.cs` 里的 `HorizontalOffsetDots`
-  （正数两列整体右移，负数左移，1mm≈23.6 dots）；标签尺寸不同则改 `RowW` / `ColW` / `ColH` / `ColGap`。
+  （正数右移，负数左移，1mm≈23.6 dots）；标签尺寸不同则改 `RowW` / `ColW` / `ColH` / `ColGap`。
 
 ## 控制台调试工具（ConsoleTool）
 构建：`dotnet build -c Release ConsoleTool\ZebraPrinterConsole.csproj`
