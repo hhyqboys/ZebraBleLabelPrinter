@@ -30,6 +30,7 @@ public sealed class ZebraPrinterService
     public string BuildMacBarcodeZpl(string mac, int? offsetOverride = null)
     {
         string bare = Code128Layout.Normalize(mac);
+        string testBare = Regex.Replace(bare, ".{2}", "$0 ").TrimEnd(); ;
         var layout = Code128Layout.Compute(bare);
 
         // 用 ZPL ^BC 原生条码（几百字节，任何连接方式都快），模块宽固定 3，居中由 Code128Layout 计算。
@@ -53,7 +54,7 @@ public sealed class ZebraPrinterService
         // 可读文本：条码下方印 MAC（人眼可读，扫码结果可直接与标签文字比对验证）。
         // 文本块取全宽居中，与条码中心（390）对齐，两种子集宽度下都居中。
         int textY = layout.Y + Code128Layout.BarcodeHeightDots + 10;
-        sb.AppendLine($"^FO0,{textY}^A0N,48,48^FB{Code128Layout.LabelW},1,0,C^FD{bare}^FS");
+        sb.AppendLine($"^FO0,{textY}^A0N,72,72^FB{Code128Layout.LabelW},1,0,C^FD{testBare}^FS");
         sb.AppendLine("^PQ1,0,1,Y");
         sb.AppendLine("^XZ");
         return sb.ToString();

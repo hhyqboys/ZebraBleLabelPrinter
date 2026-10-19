@@ -9,16 +9,16 @@ namespace ZebraBleLabelPrinter.Services;
 /// </summary>
 public static class Code128Layout
 {
-    // 600DPI：1mm ≈ 23.62 dots；60mm ≈ 780 dots535C8B540D36
-    public const int LabelW = 1420;              // 标签宽 dots（60mm）
-    public const int LabelH = 945;              // 标签高 dots（60mm）
-    public const int BarcodeHeightDots = 450;   // 条码高 dots（≈19mm，垂直居中）
+    // 600DPI：1mm ≈ 23.62 dots；60mm ≈ 1420 dots535C8B540D36
+    public const int LabelW = (int)(35 * 23.62);              // 标签宽 dots（60mm）
+    public const int LabelH = (int)(20 * 23.62);              // 标签高 dots（40mm）
+    public const int BarcodeHeightDots = (int)(13 * 23.62);   // 条码高 dots（≈19mm，垂直居中）
 
     /// <summary>CODE128 标准静区 = 窄条宽（模块宽）的 10 倍。^BC 不自动加静区，由居中式留白保证。</summary>
     public const int QuietModules = 10;
 
     /// <summary>模块宽固定 3 dots（600DPI 下 0.127mm/5mil），用户指定。</summary>
-    public const int ModuleWidth = 5;
+    public const int ModuleWidth = 4;
 
     /// <summary>
     /// 水平偏移补偿（dots）：打印机介质/传感器/存储偏移导致条码整体左偏（左侧溢出被截）时调大（条码右移），

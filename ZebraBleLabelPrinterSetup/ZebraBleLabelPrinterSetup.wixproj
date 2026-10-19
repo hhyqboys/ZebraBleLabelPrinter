@@ -7,7 +7,7 @@
   <!-- 格式：主版本.次版本.修订号.构建号                           -->
   <!-- ============================================================ -->
   <PropertyGroup>
-    <InstallerVersion>1.0.21.0</InstallerVersion>
+    <InstallerVersion>1.0.1.0</InstallerVersion>
   </PropertyGroup>
 
   <!-- 默认平台：未指定或 AnyCPU 时自动使用 x64 -->
