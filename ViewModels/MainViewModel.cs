@@ -11,7 +11,7 @@ namespace ZebraBleLabelPrinter.ViewModels;
 
 public sealed class MainViewModel : ViewModelBase
 {
-    // 标签尺寸/条码排版统一由 Code128Layout 计算（600DPI，33×33mm），预览与实际打印一致
+    // 标签尺寸/条码排版统一由 Code128Layout 计算（600DPI，双排 30×20mm，整排 81mm），预览与实际打印一致
 
     private readonly BluetoothLeScanner _scanner = new();
     private readonly ZebraPrinterService _printer = new();
