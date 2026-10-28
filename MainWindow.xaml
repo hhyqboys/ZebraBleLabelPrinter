@@ -6,6 +6,7 @@
     Title="Zebra 110XiIII Plus 600DPI - BLE MAC 条码打印"
     Width="1200"
     Height="720"
+    PreviewKeyDown="Window_PreviewKeyDown"
     WindowStartupLocation="CenterScreen">
     <Grid Margin="10">
         <Grid.RowDefinitions>
@@ -159,9 +160,9 @@
                     Margin="0,8,0,0"
                     Padding="10,4"
                     HorizontalAlignment="Left"
-                    Click="Button_Click"
                     Command="{Binding CopyMacCommand}"
-                    Content="复制选中 MAC（去冒号）" />
+                    Content="复制选中 MAC（去冒号）"
+                    Visibility="{Binding CopyButtonVisibility}" />
             </Grid>
 
             <!--  标签预览面板  -->
