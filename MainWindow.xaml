@@ -1,149 +1,217 @@
-<Window x:Class="ZebraBleLabelPrinter.MainWindow"
-        x:Name="Root"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Zebra 110XiIII Plus 600DPI - BLE MAC 条码打印"
-        Height="720" Width="1200"
-        WindowStartupLocation="CenterScreen">
+<Window
+    x:Class="ZebraBleLabelPrinter.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    x:Name="Root"
+    Title="Zebra 110XiIII Plus 600DPI - BLE MAC 条码打印"
+    Width="1200"
+    Height="720"
+    WindowStartupLocation="CenterScreen">
     <Grid Margin="10">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- 顶部：过滤 + 打印机选择 -->
+        <!--  顶部：过滤 + 打印机选择  -->
         <Grid Grid.Row="0" Margin="0,0,0,8">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="260"/>
-                <ColumnDefinition Width="20"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="260" />
+                <ColumnDefinition Width="20" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <TextBlock Grid.Column="0" Text="名称过滤：" VerticalAlignment="Center" Margin="0,0,6,0"/>
-            <TextBox Grid.Column="1"
-                     Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}"
-                     VerticalContentAlignment="Center" Padding="4,3"/>
-            <TextBlock Grid.Column="2" Text=""/>
-            <TextBlock Grid.Column="3" Text="打印机：" VerticalAlignment="Center" Margin="0,0,6,0"/>
-            <ComboBox Grid.Column="4"
-                      ItemsSource="{Binding Printers}"
-                      SelectedItem="{Binding SelectedPrinter}"
-                      VerticalContentAlignment="Center"
-                      IsEditable="True"/>
-            <Button Grid.Column="5" Content="刷新打印机列表" Margin="8,0,0,0" Padding="10,4"
-                    Command="{Binding RefreshPrintersCommand}"/>
+            <TextBlock
+                Grid.Column="0"
+                Margin="0,0,6,0"
+                VerticalAlignment="Center"
+                Text="名称过滤：" />
+            <TextBox
+                Grid.Column="1"
+                Padding="4,3"
+                VerticalContentAlignment="Center"
+                Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBlock Grid.Column="2" Text="" />
+            <TextBlock
+                Grid.Column="3"
+                Margin="0,0,6,0"
+                VerticalAlignment="Center"
+                Text="打印机：" />
+            <ComboBox
+                Grid.Column="4"
+                VerticalContentAlignment="Center"
+                IsEditable="True"
+                ItemsSource="{Binding Printers}"
+                SelectedItem="{Binding SelectedPrinter}" />
+            <Button
+                Grid.Column="5"
+                Margin="8,0,0,0"
+                Padding="10,4"
+                Command="{Binding RefreshPrintersCommand}"
+                Content="刷新打印机列表" />
         </Grid>
 
-        <!-- 中间：左列表 + 右预览 -->
+        <!--  中间：左列表 + 右预览  -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="300"/>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="300" />
             </Grid.ColumnDefinitions>
 
-            <!-- 蓝牙设备列表 -->
+            <!--  蓝牙设备列表  -->
             <Grid Grid.Column="0">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <ListView Grid.Row="0"
-                          ItemsSource="{Binding DevicesView}"
-                          SelectedItem="{Binding SelectedDevice}"
-                          VirtualizingStackPanel.IsVirtualizing="True"
-                          VirtualizingStackPanel.VirtualizationMode="Recycling">
-                <ListView.View>
-                    <GridView>
-                        <GridViewColumn Header="设备名称" Width="300" DisplayMemberBinding="{Binding DisplayName}"/>
-                        <GridViewColumn Header="MAC 地址" Width="180" DisplayMemberBinding="{Binding Mac}"/>
-                        <GridViewColumn Header="信号强度" Width="220">
-                            <GridViewColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Grid>
-                                        <Border Background="#FFE6E6E6" Height="14" VerticalAlignment="Center" CornerRadius="2"/>
-                                        <Border Background="#FF4CAF50" Height="14" CornerRadius="2"
+                <ListView
+                    Grid.Row="0"
+                    ItemsSource="{Binding DevicesView}"
+                    SelectedItem="{Binding SelectedDevice}"
+                    VirtualizingStackPanel.IsVirtualizing="True"
+                    VirtualizingStackPanel.VirtualizationMode="Recycling">
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn
+                                Width="300"
+                                DisplayMemberBinding="{Binding DisplayName}"
+                                Header="设备名称" />
+                            <GridViewColumn
+                                Width="180"
+                                DisplayMemberBinding="{Binding Mac}"
+                                Header="MAC 地址" />
+                            <GridViewColumn Width="220" Header="信号强度">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <Border
+                                                Height="14"
+                                                VerticalAlignment="Center"
+                                                Background="#FFE6E6E6"
+                                                CornerRadius="2" />
+                                            <Border
+                                                Width="{Binding RssiBar}"
+                                                Height="14"
                                                 HorizontalAlignment="Left"
-                                                Width="{Binding RssiBar}"/>
-                                        <TextBlock VerticalAlignment="Center" HorizontalAlignment="Right"
-                                                   Margin="0,0,6,0" FontSize="11" Foreground="#FF333333">
-                                            <TextBlock.Text>
-                                                <Binding Path="Rssi" StringFormat="{}{0} dBm"/>
-                                            </TextBlock.Text>
+                                                Background="#FF4CAF50"
+                                                CornerRadius="2" />
+                                            <TextBlock
+                                                Margin="0,0,6,0"
+                                                HorizontalAlignment="Right"
+                                                VerticalAlignment="Center"
+                                                FontSize="11"
+                                                Foreground="#FF333333">
+                                                <TextBlock.Text>
+                                                    <Binding Path="Rssi" StringFormat="{}{0} dBm" />
+                                                </TextBlock.Text>
+                                            </TextBlock>
+                                        </Grid>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn
+                                Width="120"
+                                DisplayMemberBinding="{Binding LastSeen, StringFormat=HH:mm:ss}"
+                                Header="最后看到" />
+                            <GridViewColumn Width="80" Header="状态">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            FontWeight="Bold"
+                                            Foreground="#FF2E7D32">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Text" Value="" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsPrinted}" Value="True">
+                                                            <Setter Property="Text" Value="已打印" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
                                         </TextBlock>
-                                    </Grid>
-                                </DataTemplate>
-                            </GridViewColumn.CellTemplate>
-                        </GridViewColumn>
-                        <GridViewColumn Header="最后看到" Width="120" DisplayMemberBinding="{Binding LastSeen, StringFormat=HH:mm:ss}"/>
-                        <GridViewColumn Header="状态" Width="80">
-                            <GridViewColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
-                                               FontWeight="Bold" Foreground="#FF2E7D32">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Text" Value=""/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsPrinted}" Value="True">
-                                                        <Setter Property="Text" Value="已打印"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                </DataTemplate>
-                            </GridViewColumn.CellTemplate>
-                        </GridViewColumn>
-                        <GridViewColumn Header="操作" Width="110">
-                            <GridViewColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Button Content="打印条码" Padding="10,3"
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Width="110" Header="操作">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button
+                                            Padding="10,3"
                                             Command="{Binding DataContext.PrintCommand, ElementName=Root}"
-                                            CommandParameter="{Binding}"/>
-                                </DataTemplate>
-                            </GridViewColumn.CellTemplate>
-                        </GridViewColumn>
-                    </GridView>
-                </ListView.View>
+                                            CommandParameter="{Binding}"
+                                            Content="打印条码" />
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                        </GridView>
+                    </ListView.View>
                 </ListView>
 
-                <Button Grid.Row="1" Margin="0,8,0,0" Padding="10,4"
-                        HorizontalAlignment="Left"
-                        Content="复制选中 MAC（去冒号）"
-                        Command="{Binding CopyMacCommand}"/>
+                <Button
+                    Grid.Row="1"
+                    Margin="0,8,0,0"
+                    Padding="10,4"
+                    HorizontalAlignment="Left"
+                    Click="Button_Click"
+                    Command="{Binding CopyMacCommand}"
+                    Content="复制选中 MAC（去冒号）" />
             </Grid>
 
-            <!-- 标签预览面板 -->
-            <Border Grid.Column="1" Margin="10,0,0,0"
-                    BorderBrush="#FF888888" BorderThickness="1" Background="#FFF7F7F7">
+            <!--  标签预览面板  -->
+            <Border
+                Grid.Column="1"
+                Margin="10,0,0,0"
+                Background="#FFF7F7F7"
+                BorderBrush="#FF888888"
+                BorderThickness="1">
                 <Grid Margin="10">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Row="0" Text="标签预览（双排 30×20mm，整排 81mm）" FontWeight="Bold" Margin="2,0,0,8"/>
+                    <TextBlock
+                        Grid.Row="0"
+                        Margin="2,0,0,8"
+                        FontWeight="Bold"
+                        Text="标签预览（双排 30×20mm，整排 81mm）" />
 
-                    <!-- 模拟标签纸：整排 81:20 比例 -->
-                    <Border Grid.Row="1" Width="280" Height="69"
-                            Background="White" BorderBrush="Black" BorderThickness="1"
-                            HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <!--  模拟标签纸：整排 81:20 比例  -->
+                    <Border
+                        Grid.Row="1"
+                        Width="280"
+                        Height="69"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="White"
+                        BorderBrush="Black"
+                        BorderThickness="1">
                         <Grid>
-                            <Image Source="{Binding PreviewImage}" Stretch="Uniform" Margin="12"/>
-                            <TextBlock Text="选中左侧设备&#x0a;以预览条码"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center"
-                                       Foreground="#FF999999" TextWrapping="Wrap" TextAlignment="Center">
+                            <Image
+                                Margin="12"
+                                Source="{Binding PreviewImage}"
+                                Stretch="Uniform" />
+                            <TextBlock
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Foreground="#FF999999"
+                                Text="选中左侧设备&#x0a;以预览条码"
+                                TextAlignment="Center"
+                                TextWrapping="Wrap">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
-                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Setter Property="Visibility" Value="Collapsed" />
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding HasPreview}" Value="False">
-                                                <Setter Property="Visibility" Value="Visible"/>
+                                                <Setter Property="Visibility" Value="Visible" />
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
@@ -152,16 +220,21 @@
                         </Grid>
                     </Border>
 
-                    <TextBlock Grid.Row="2" Text="{Binding PreviewMac}"
-                               Margin="2,10,0,0" FontWeight="Bold"
-                               HorizontalAlignment="Center" FontFamily="Consolas" FontSize="14"/>
+                    <TextBlock
+                        Grid.Row="2"
+                        Margin="2,10,0,0"
+                        HorizontalAlignment="Center"
+                        FontFamily="Consolas"
+                        FontSize="14"
+                        FontWeight="Bold"
+                        Text="{Binding PreviewMac}" />
                 </Grid>
             </Border>
         </Grid>
 
-        <!-- 状态栏 -->
+        <!--  状态栏  -->
         <StatusBar Grid.Row="2">
-            <TextBlock Text="{Binding StatusText}" Padding="4,0"/>
+            <TextBlock Padding="4,0" Text="{Binding StatusText}" />
         </StatusBar>
     </Grid>
 </Window>

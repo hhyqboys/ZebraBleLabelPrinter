@@ -18,4 +18,9 @@ public partial class MainWindow : Window
         _vm.Shutdown();
         base.OnClosed(e);
     }
+
+    private void Button_Click(object sender, RoutedEventArgs e)
+    {
+
+    }
 }
