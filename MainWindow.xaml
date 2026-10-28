@@ -46,11 +46,16 @@
             </Grid.ColumnDefinitions>
 
             <!-- 蓝牙设备列表 -->
-            <ListView Grid.Column="0"
-                      ItemsSource="{Binding DevicesView}"
-                      SelectedItem="{Binding SelectedDevice}"
-                      VirtualizingStackPanel.IsVirtualizing="True"
-                      VirtualizingStackPanel.VirtualizationMode="Recycling">
+            <Grid Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <ListView Grid.Row="0"
+                          ItemsSource="{Binding DevicesView}"
+                          SelectedItem="{Binding SelectedDevice}"
+                          VirtualizingStackPanel.IsVirtualizing="True"
+                          VirtualizingStackPanel.VirtualizationMode="Recycling">
                 <ListView.View>
                     <GridView>
                         <GridViewColumn Header="设备名称" Width="300" DisplayMemberBinding="{Binding DisplayName}"/>
@@ -104,7 +109,13 @@
                         </GridViewColumn>
                     </GridView>
                 </ListView.View>
-            </ListView>
+                </ListView>
+
+                <Button Grid.Row="1" Margin="0,8,0,0" Padding="10,4"
+                        HorizontalAlignment="Left"
+                        Content="复制选中 MAC（去冒号）"
+                        Command="{Binding CopyMacCommand}"/>
+            </Grid>
 
             <!-- 标签预览面板 -->
             <Border Grid.Column="1" Margin="10,0,0,0"

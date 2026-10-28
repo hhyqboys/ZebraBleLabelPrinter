@@ -27,6 +27,7 @@ public sealed class MainViewModel : ViewModelBase
 
     public RelayCommand PrintCommand { get; }
     public RelayCommand RefreshPrintersCommand { get; }
+    public RelayCommand CopyMacCommand { get; }
 
     public MainViewModel()
     {
@@ -39,6 +40,7 @@ public sealed class MainViewModel : ViewModelBase
 
         PrintCommand = new RelayCommand(DoPrint, _ => !IsBusy);
         RefreshPrintersCommand = new RelayCommand(_ => LoadPrinters());
+        CopyMacCommand = new RelayCommand(DoCopyMac, _ => SelectedDevice != null);
 
         LoadPrinters();
         _scanner.DeviceUpdated += OnDeviceUpdated;
@@ -124,6 +126,7 @@ public sealed class MainViewModel : ViewModelBase
                 OnPropertyChanged(nameof(PreviewMac));
                 OnPropertyChanged(nameof(HasPreview));
                 RefreshPreview();
+                CopyMacCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -155,6 +158,17 @@ public sealed class MainViewModel : ViewModelBase
         if (_knownMacs.Add(device.Address))
             AllDevices.Add(device);
         _sortDirty = true;
+    }
+
+    /// <summary>复制选中设备的 MAC 到剪切板（去掉冒号，12 位十六进制）。</summary>
+    private void DoCopyMac(object? param)
+    {
+        string? mac = SelectedDevice?.Mac;
+        if (string.IsNullOrWhiteSpace(mac)) return;
+
+        string bare = mac.Replace(":", string.Empty);
+        System.Windows.Clipboard.SetText(bare);
+        StatusText = $"已复制 MAC（去冒号）：{bare}";
     }
 
     private async void DoPrint(object? param)
