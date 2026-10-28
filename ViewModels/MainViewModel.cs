@@ -135,6 +135,24 @@ public sealed class MainViewModel : ViewModelBase
     public string? PreviewMac { get; private set; }
     public bool HasPreview => SelectedDevice != null;
 
+    private Visibility _copyButtonVisibility = Visibility.Collapsed;
+    public Visibility CopyButtonVisibility
+    {
+        get => _copyButtonVisibility;
+        private set => SetProperty(ref _copyButtonVisibility, value);
+    }
+
+    /// <summary>连按 5 次 Ctrl 切换复制按钮显示/隐藏（由 MainWindow 键盘事件调用）。</summary>
+    public void ToggleCopyButton()
+    {
+        CopyButtonVisibility = CopyButtonVisibility == Visibility.Visible
+            ? Visibility.Collapsed
+            : Visibility.Visible;
+        StatusText = CopyButtonVisibility == Visibility.Visible
+            ? "复制按钮已显示（再连按 5 次 Ctrl 关闭）"
+            : "复制按钮已隐藏（连按 5 次 Ctrl 显示）";
+    }
+
     private void RefreshPreview()
     {
         string bare = SelectedDevice?.Mac ?? string.Empty;

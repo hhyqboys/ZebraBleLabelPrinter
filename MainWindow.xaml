@@ -4,7 +4,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Zebra 110XiIII Plus 600DPI - BLE MAC 条码打印"
         Height="720" Width="1200"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        PreviewKeyDown="Window_PreviewKeyDown">
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -114,6 +115,7 @@
                 <Button Grid.Row="1" Margin="0,8,0,0" Padding="10,4"
                         HorizontalAlignment="Left"
                         Content="复制选中 MAC（去冒号）"
+                        Visibility="{Binding CopyButtonVisibility}"
                         Command="{Binding CopyMacCommand}"/>
             </Grid>
 
