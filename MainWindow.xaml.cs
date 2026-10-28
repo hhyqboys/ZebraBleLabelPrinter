@@ -20,7 +20,7 @@ public partial class MainWindow : Window
         DataContext = _vm;
     }
 
-    private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+    private void Window_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
         if (e.IsRepeat) return;
         if (e.Key != Key.LeftCtrl && e.Key != Key.RightCtrl) return;

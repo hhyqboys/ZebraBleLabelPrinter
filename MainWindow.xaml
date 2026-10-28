@@ -161,7 +161,7 @@
                     Padding="10,4"
                     HorizontalAlignment="Left"
                     Command="{Binding CopyMacCommand}"
-                    Content="复制选中 MAC（去冒号）"
+                    Content="复制选中 MAC"
                     Visibility="{Binding CopyButtonVisibility}" />
             </Grid>
 
