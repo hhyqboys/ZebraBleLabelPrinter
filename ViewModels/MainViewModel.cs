@@ -167,8 +167,32 @@ public sealed class MainViewModel : ViewModelBase
         if (string.IsNullOrWhiteSpace(mac)) return;
 
         string bare = mac.Replace(":", string.Empty);
-        System.Windows.Clipboard.SetText(bare);
-        StatusText = $"已复制 MAC（去冒号）：{bare}";
+        if (TrySetClipboard(bare))
+            StatusText = $"已复制 MAC（去冒号）：{bare}";
+        else
+            StatusText = "复制失败：剪贴板被其他程序占用，请稍后重试。";
+    }
+
+    /// <summary>
+    /// 写入系统剪贴板并重试。
+    /// 不用 Clipboard.SetText（其内部 Flush 在剪贴板被其他进程占用时会抛 CLIPBRD_E_CANT_OPEN 0x800401D0），
+    /// 改用 SetDataObject(copy:false) 延迟渲染，占用冲突时重试 3 次仍失败则返回 false，不抛异常。
+    /// </summary>
+    private static bool TrySetClipboard(string text)
+    {
+        for (int i = 0; i < 3; i++)
+        {
+            try
+            {
+                System.Windows.Clipboard.SetDataObject(text, copy: false);
+                return true;
+            }
+            catch (System.Runtime.InteropServices.COMException)
+            {
+                System.Threading.Thread.Sleep(50);
+            }
+        }
+        return false;
     }
 
     private async void DoPrint(object? param)
